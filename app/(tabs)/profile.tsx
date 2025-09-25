@@ -74,6 +74,12 @@ export default function ProfileScreen() {
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{user?.firstName} {user?.lastName}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
+            {user?.role === 'admin' && (
+              <View style={styles.adminBadge}>
+                <Icon name="shield-checkmark" size={16} color={colors.primary} />
+                <Text style={styles.adminBadgeText}>Administrator</Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity onPress={() => router.push('/profile/edit')}>
             <Icon name="create-outline" size={24} color={colors.primary} />
@@ -126,14 +132,38 @@ export default function ProfileScreen() {
         </View>
 
         {/* Admin Section (if user is admin) */}
-        {user?.email === 'admin@example.com' && (
+        {user?.role === 'admin' && (
           <View style={styles.menuSection}>
-            <Text style={styles.sectionTitle}>Admin</Text>
+            <Text style={styles.sectionTitle}>Administration</Text>
             <MenuItem
               icon="settings-outline"
-              title="Admin Panel"
-              subtitle="Manage products and orders"
+              title="Admin Dashboard"
+              subtitle="Manage the application"
               onPress={() => router.push('/admin')}
+            />
+            <MenuItem
+              icon="cube-outline"
+              title="Manage Products"
+              subtitle="Add, edit, and remove products"
+              onPress={() => router.push('/admin/products')}
+            />
+            <MenuItem
+              icon="folder-outline"
+              title="Manage Categories"
+              subtitle="Organize product categories"
+              onPress={() => router.push('/admin/categories')}
+            />
+            <MenuItem
+              icon="receipt-outline"
+              title="Manage Orders"
+              subtitle="View and update order status"
+              onPress={() => router.push('/admin/orders')}
+            />
+            <MenuItem
+              icon="people-outline"
+              title="Manage Users"
+              subtitle="View and manage user accounts"
+              onPress={() => router.push('/admin/users')}
             />
           </View>
         )}
@@ -200,6 +230,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  adminBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  adminBadgeText: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: spacing.xs,
   },
   menuSection: {
     backgroundColor: colors.card,

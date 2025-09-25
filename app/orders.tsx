@@ -1,12 +1,14 @@
 
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../store';
 import { colors, spacing, commonStyles } from '../styles/commonStyles';
 import { formatKES } from '../utils/currency';
+import { supabase } from './integrations/supabase/client';
+import { Order } from '../types';
 import Icon from '../components/Icon';
 import Button from '../components/Button';
 
@@ -44,8 +46,100 @@ const getStatusIcon = (status: string) => {
   }
 };
 
+const getStatusProgress = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 25;
+    case 'confirmed':
+      return 50;
+    case 'shipped':
+      return 75;
+    case 'delivered':
+      return 100;
+    case 'cancelled':
+      return 0;
+    default:
+      return 0;
+  }
+};
+
 export default function OrdersScreen() {
-  const { orders } = useSelector((state: RootState) => state.orders);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  useEffect(() => {
+    if (user?.id) {
+      loadOrders();
+    }
+  }, [user?.id]);
+
+  const loadOrders = async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            *,
+            products (*)
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading orders:', error);
+        return;
+      }
+
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  };
+
+  const handleReorder = async (order: Order) => {
+    // Add order items to cart and navigate to cart
+    console.log('Reorder:', order.id);
+    // Implementation would add items to cart
+  };
+
+  const filteredOrders = orders.filter(order => 
+    statusFilter === 'all' || order.status === statusFilter
+  );
+
+  if (loading && orders.length === 0) {
+    return (
+      <SafeAreaView style={commonStyles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Icon name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>My Orders</Text>
+          </View>
+          
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading orders...</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (orders.length === 0) {
     return (
@@ -84,61 +178,129 @@ export default function OrdersScreen() {
           <Text style={styles.title}>My Orders</Text>
         </View>
 
-        {/* Orders List */}
-        <ScrollView style={styles.ordersList} showsVerticalScrollIndicator={false}>
-          {orders.map((order) => (
+        {/* Status Filter */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusFilters}>
+          {['all', 'pending', 'confirmed', 'shipped', 'delivered'].map((status) => (
             <TouchableOpacity
-              key={order.id}
-              style={styles.orderCard}
-              onPress={() => router.push(`/order/${order.id}`)}
-              activeOpacity={0.7}
+              key={status}
+              style={[
+                styles.statusFilter,
+                statusFilter === status && styles.statusFilterActive
+              ]}
+              onPress={() => setStatusFilter(status)}
             >
-              <View style={styles.orderHeader}>
-                <View>
-                  <Text style={styles.orderId}>Order #{order.id}</Text>
-                  <Text style={styles.orderDate}>
-                    {new Date(order.orderDate).toLocaleDateString()}
-                  </Text>
-                </View>
-                
-                <View style={styles.statusContainer}>
-                  <Icon
-                    name={getStatusIcon(order.status) as any}
-                    size={16}
-                    color={getStatusColor(order.status)}
-                  />
-                  <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.orderItems}>
-                {order.items.slice(0, 2).map((item, index) => (
-                  <Text key={index} style={styles.itemText}>
-                    {item.quantity}× {item.product.name}
-                  </Text>
-                ))}
-                {order.items.length > 2 && (
-                  <Text style={styles.moreItems}>
-                    +{order.items.length - 2} more items
-                  </Text>
-                )}
-              </View>
-
-              <View style={styles.orderFooter}>
-                <Text style={styles.orderTotal}>{formatKES(order.total)}</Text>
-                <View style={styles.orderActions}>
-                  {order.status === 'delivered' && (
-                    <TouchableOpacity style={styles.reorderButton}>
-                      <Text style={styles.reorderText}>Reorder</Text>
-                    </TouchableOpacity>
-                  )}
-                  <Icon name="chevron-forward" size={20} color={colors.textSecondary} />
-                </View>
-              </View>
+              <Text style={[
+                styles.statusFilterText,
+                statusFilter === status && styles.statusFilterTextActive
+              ]}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Text>
             </TouchableOpacity>
           ))}
+        </ScrollView>
+
+        {/* Orders List */}
+        <ScrollView 
+          style={styles.ordersList} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {filteredOrders.length === 0 ? (
+            <View style={styles.emptyFiltered}>
+              <Icon name="filter-outline" size={60} color={colors.textSecondary} />
+              <Text style={styles.emptyFilteredText}>No {statusFilter} orders</Text>
+              <Text style={styles.emptyFilteredSubtext}>Try selecting a different filter</Text>
+            </View>
+          ) : (
+            filteredOrders.map((order) => (
+              <TouchableOpacity
+                key={order.id}
+                style={styles.orderCard}
+                onPress={() => router.push(`/order/${order.id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.orderHeader}>
+                  <View>
+                    <Text style={styles.orderId}>Order #{order.id.slice(0, 8)}</Text>
+                    <Text style={styles.orderDate}>
+                      {new Date(order.order_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.statusContainer}>
+                    <Icon
+                      name={getStatusIcon(order.status) as any}
+                      size={16}
+                      color={getStatusColor(order.status)}
+                    />
+                    <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBar}>
+                    <View 
+                      style={[
+                        styles.progressFill, 
+                        { 
+                          width: `${getStatusProgress(order.status)}%`,
+                          backgroundColor: getStatusColor(order.status)
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.progressText}>
+                    {getStatusProgress(order.status)}% Complete
+                  </Text>
+                </View>
+
+                <View style={styles.orderItems}>
+                  {order.order_items?.slice(0, 2).map((item, index) => (
+                    <Text key={index} style={styles.itemText}>
+                      {item.quantity}× {item.products?.name || 'Product'}
+                    </Text>
+                  ))}
+                  {(order.order_items?.length || 0) > 2 && (
+                    <Text style={styles.moreItems}>
+                      +{(order.order_items?.length || 0) - 2} more items
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.orderFooter}>
+                  <Text style={styles.orderTotal}>{formatKES(order.total)}</Text>
+                  <View style={styles.orderActions}>
+                    {order.status === 'delivered' && (
+                      <TouchableOpacity 
+                        style={styles.reorderButton}
+                        onPress={() => handleReorder(order)}
+                      >
+                        <Text style={styles.reorderText}>Reorder</Text>
+                      </TouchableOpacity>
+                    )}
+                    {order.tracking_number && (
+                      <TouchableOpacity style={styles.trackButton}>
+                        <Icon name="location-outline" size={16} color={colors.primary} />
+                        <Text style={styles.trackText}>Track</Text>
+                      </TouchableOpacity>
+                    )}
+                    <Icon name="chevron-forward" size={20} color={colors.textSecondary} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -167,10 +329,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
+  statusFilters: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  statusFilter: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: spacing.sm,
+  },
+  statusFilterActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  statusFilterText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  statusFilterTextActive: {
+    color: colors.background,
+  },
   ordersList: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
   },
   orderCard: {
     backgroundColor: colors.card,
@@ -209,6 +404,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginLeft: spacing.xs,
+  },
+  progressContainer: {
+    marginBottom: spacing.md,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  progressText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    textAlign: 'right',
   },
   orderItems: {
     marginBottom: spacing.md,
@@ -249,6 +463,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  trackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    marginRight: spacing.sm,
+  },
+  trackText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: spacing.xs,
+  },
   emptyOrders: {
     flex: 1,
     justifyContent: 'center',
@@ -272,5 +501,23 @@ const styles = StyleSheet.create({
   startShoppingButton: {
     width: '100%',
     maxWidth: 300,
+  },
+  emptyFiltered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xl * 2,
+  },
+  emptyFilteredText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: spacing.md,
+  },
+  emptyFilteredSubtext: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
 });

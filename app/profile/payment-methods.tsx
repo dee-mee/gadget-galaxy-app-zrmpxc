@@ -31,7 +31,7 @@ export default function PaymentMethodsScreen() {
     {
       id: '2',
       type: 'mobile_money',
-      mobileNumber: '+254712345678',
+      mobileNumber: '254712345678',
       provider: 'M-Pesa',
       isDefault: false,
     },
@@ -103,25 +103,27 @@ export default function PaymentMethodsScreen() {
             <Icon name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>Payment Methods</Text>
-          <TouchableOpacity onPress={handleAddPaymentMethod} style={styles.addButton}>
-            <Icon name="add" size={24} color={colors.primary} />
-          </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Add Payment Method Button */}
+          <View style={styles.addMethodContainer}>
+            <Button
+              text="Add Payment Method"
+              onPress={handleAddPaymentMethod}
+              style={styles.addMethodButton}
+            />
+          </View>
+
           {paymentMethods.length === 0 ? (
             <View style={styles.emptyState}>
               <Icon name="card-outline" size={80} color={colors.textSecondary} />
               <Text style={styles.emptyStateText}>No payment methods</Text>
               <Text style={styles.emptyStateSubtext}>Add a payment method to get started</Text>
-              <Button
-                text="Add Payment Method"
-                onPress={handleAddPaymentMethod}
-                style={styles.addPaymentButton}
-              />
             </View>
           ) : (
             <View style={styles.paymentMethodsList}>
+              <Text style={styles.sectionTitle}>Saved Payment Methods</Text>
               {paymentMethods.map((method) => (
                 <View key={method.id} style={styles.paymentMethodCard}>
                   <View style={styles.paymentMethodHeader}>
@@ -198,7 +200,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
@@ -206,18 +207,28 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: spacing.sm,
+    marginRight: spacing.sm,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
   },
-  addButton: {
-    padding: spacing.sm,
-  },
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
+  },
+  addMethodContainer: {
+    paddingVertical: spacing.md,
+  },
+  addMethodButton: {
+    backgroundColor: colors.primary,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   emptyState: {
     flex: 1,
@@ -237,10 +248,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
     marginBottom: spacing.xl,
-  },
-  addPaymentButton: {
-    width: '100%',
-    maxWidth: 300,
   },
   paymentMethodsList: {
     paddingVertical: spacing.md,
