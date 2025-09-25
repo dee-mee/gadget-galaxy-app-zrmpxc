@@ -1,144 +1,20 @@
 
-import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
+import { formatKES } from '../../utils/currency';
+import Icon from '../../components/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Button from '../../components/Button';
+import { Product } from '../../types';
 import { router } from 'expo-router';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
-import Icon from '../../components/Icon';
-import Button from '../../components/Button';
 import { supabase } from '../integrations/supabase/client';
-import { formatKES } from '../../utils/currency';
-import { Product } from '../../types';
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    ...commonStyles.shadow,
-  },
-  searchInput: {
-    flex: 1,
-    height: 48,
-    fontSize: 16,
-    color: colors.text,
-    marginLeft: spacing.sm,
-  },
-  productCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...commonStyles.shadow,
-  },
-  productHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  productInfo: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  productName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  productBrand: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  productActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    padding: spacing.sm,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-  },
-  productFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  stockInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stockText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: spacing.xs,
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 6,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  activeStatus: {
-    backgroundColor: '#D1FAE5',
-    color: '#065F46',
-  },
-  inactiveStatus: {
-    backgroundColor: '#FEE2E2',
-    color: '#991B1B',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.md,
-  },
-});
+import React, { useEffect, useState } from 'react';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadProducts();
@@ -155,34 +31,17 @@ export default function AdminProducts() {
         .from('products')
         .select(`
           *,
-          categories(id, name, icon)
+          category:categories(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
-        throw error;
+        console.error('Error loading products:', error);
+        Alert.alert('Error', 'Failed to load products');
+        return;
       }
 
-      const formattedProducts = data?.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        originalPrice: product.original_price,
-        discount: product.discount,
-        images: product.images || [],
-        category: product.categories || { id: '', name: 'Uncategorized', icon: 'help-outline' },
-        brand: product.brand,
-        stock: product.stock,
-        rating: product.rating,
-        reviewCount: product.review_count,
-        features: product.features || [],
-        specifications: product.specifications || {},
-        isFeatured: product.is_featured,
-        isActive: product.is_active,
-      })) || [];
-
-      setProducts(formattedProducts);
+      setProducts(data || []);
     } catch (error) {
       console.error('Error loading products:', error);
       Alert.alert('Error', 'Failed to load products');
@@ -199,8 +58,8 @@ export default function AdminProducts() {
 
     const filtered = products.filter(product =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category.name.toLowerCase().includes(searchQuery.toLowerCase())
+      product.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     setFilteredProducts(filtered);
@@ -223,17 +82,19 @@ export default function AdminProducts() {
                 .eq('id', productId);
 
               if (error) {
-                throw error;
+                console.error('Error deleting product:', error);
+                Alert.alert('Error', 'Failed to delete product');
+                return;
               }
 
-              setProducts(products.filter(p => p.id !== productId));
               Alert.alert('Success', 'Product deleted successfully');
+              loadProducts();
             } catch (error) {
               console.error('Error deleting product:', error);
               Alert.alert('Error', 'Failed to delete product');
             }
-          },
-        },
+          }
+        }
       ]
     );
   };
@@ -246,12 +107,13 @@ export default function AdminProducts() {
         .eq('id', productId);
 
       if (error) {
-        throw error;
+        console.error('Error updating product status:', error);
+        Alert.alert('Error', 'Failed to update product status');
+        return;
       }
 
-      setProducts(products.map(p => 
-        p.id === productId ? { ...p, isActive: !currentStatus } : p
-      ));
+      Alert.alert('Success', `Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+      loadProducts();
     } catch (error) {
       console.error('Error updating product status:', error);
       Alert.alert('Error', 'Failed to update product status');
@@ -260,97 +122,83 @@ export default function AdminProducts() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={styles.title}>Loading products...</Text>
+      <SafeAreaView style={commonStyles.safeArea}>
+        <View style={[styles.container, styles.centered]}>
+          <Text style={styles.loadingText}>Loading products...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+    <SafeAreaView style={commonStyles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Products</Text>
-          <Button
-            title="Add Product"
+          <TouchableOpacity
+            style={styles.addButton}
             onPress={() => router.push('/admin/product/new')}
-            style={{ paddingHorizontal: spacing.md }}
-          />
+          >
+            <Icon name="add" size={24} color={colors.white} />
+          </TouchableOpacity>
         </View>
 
+        {/* Search */}
         <View style={styles.searchContainer}>
-          <Icon name="search-outline" size={20} color={colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search products..."
-            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            placeholderTextColor={colors.textSecondary}
           />
+          <Icon name="search" size={20} color={colors.textSecondary} />
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Products List */}
+        <ScrollView style={styles.productsList} showsVerticalScrollIndicator={false}>
           {filteredProducts.length === 0 ? (
             <View style={styles.emptyState}>
               <Icon name="cube-outline" size={64} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>
-                {searchQuery ? 'No products found' : 'No products yet'}
+              <Text style={styles.emptyStateTitle}>No products found</Text>
+              <Text style={styles.emptyStateText}>
+                {searchQuery ? 'Try adjusting your search' : 'Add your first product to get started'}
               </Text>
             </View>
           ) : (
             filteredProducts.map((product) => (
               <View key={product.id} style={styles.productCard}>
-                <View style={styles.productHeader}>
-                  <View style={styles.productInfo}>
-                    <Text style={styles.productName}>{product.name}</Text>
-                    <Text style={styles.productBrand}>{product.brand} • {product.category.name}</Text>
-                    <Text style={styles.productPrice}>{formatKES(product.price)}</Text>
-                  </View>
-                  <View style={styles.productActions}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => router.push(`/admin/product/${product.id}`)}
-                    >
-                      <Icon name="create-outline" size={20} color={colors.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => toggleProductStatus(product.id, product.isActive || false)}
-                    >
-                      <Icon 
-                        name={product.isActive ? "eye-outline" : "eye-off-outline"} 
-                        size={20} 
-                        color={product.isActive ? colors.success : colors.textSecondary} 
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleDeleteProduct(product.id)}
-                    >
-                      <Icon name="trash-outline" size={20} color={colors.error} />
-                    </TouchableOpacity>
-                  </View>
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{product.name}</Text>
+                  <Text style={styles.productBrand}>{product.brand}</Text>
+                  <Text style={styles.productPrice}>{formatKES(product.price)}</Text>
+                  <Text style={styles.productStock}>Stock: {product.stock}</Text>
                 </View>
 
-                <View style={styles.productFooter}>
-                  <View style={styles.stockInfo}>
-                    <Icon 
-                      name="cube-outline" 
-                      size={16} 
-                      color={product.stock > 10 ? colors.success : product.stock > 0 ? colors.warning : colors.error} 
-                    />
-                    <Text style={styles.stockText}>
-                      {product.stock} in stock
+                <View style={styles.productActions}>
+                  <TouchableOpacity
+                    style={[styles.statusButton, product.is_active ? styles.activeButton : styles.inactiveButton]}
+                    onPress={() => toggleProductStatus(product.id, product.is_active)}
+                  >
+                    <Text style={[styles.statusButtonText, product.is_active ? styles.activeButtonText : styles.inactiveButtonText]}>
+                      {product.is_active ? 'Active' : 'Inactive'}
                     </Text>
-                  </View>
-                  <Text style={[
-                    styles.statusBadge,
-                    product.isActive ? styles.activeStatus : styles.inactiveStatus
-                  ]}>
-                    {product.isActive ? 'ACTIVE' : 'INACTIVE'}
-                  </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => router.push(`/admin/product/${product.id}`)}
+                  >
+                    <Icon name="create" size={20} color={colors.primary} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteProduct(product.id)}
+                  >
+                    <Icon name="trash" size={20} color={colors.error} />
+                  </TouchableOpacity>
                 </View>
               </View>
             ))
@@ -360,3 +208,152 @@ export default function AdminProducts() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  addButton: {
+    backgroundColor: colors.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 8,
+    marginRight: spacing.sm,
+  },
+  productsList: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xl * 2,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  productCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  productBrand: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  productStock: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  statusButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  activeButton: {
+    backgroundColor: colors.success + '20',
+    borderColor: colors.success,
+  },
+  inactiveButton: {
+    backgroundColor: colors.error + '20',
+    borderColor: colors.error,
+  },
+  statusButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  activeButtonText: {
+    color: colors.success,
+  },
+  inactiveButtonText: {
+    color: colors.error,
+  },
+  editButton: {
+    padding: spacing.sm,
+  },
+  deleteButton: {
+    padding: spacing.sm,
+  },
+});

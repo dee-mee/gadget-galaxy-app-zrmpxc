@@ -1,142 +1,122 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector, useDispatch } from 'react-redux';
-import { useLocalSearchParams } from 'expo-router';
-import { RootState } from '../../store';
-import { setSearchResults } from '../../store/slices/productSlice';
-import { colors, spacing, commonStyles } from '../../styles/commonStyles';
-import SearchBar from '../../components/SearchBar';
-import ProductCard from '../../components/ProductCard';
 import Icon from '../../components/Icon';
+import { useSelector, useDispatch } from 'react-redux';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import SearchBar from '../../components/SearchBar';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { setSearchResults } from '../../store/slices/productSlice';
+import ProductCard from '../../components/ProductCard';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { colors, spacing, commonStyles } from '../../styles/commonStyles';
+import { RootState } from '../../store';
 
 const SORT_OPTIONS = [
-  { key: 'name', label: 'Name', value: 'asc' as const },
-  { key: 'price', label: 'Price: Low to High', value: 'asc' as const },
-  { key: 'price', label: 'Price: High to Low', value: 'desc' as const },
-  { key: 'rating', label: 'Rating', value: 'desc' as const },
+  { id: 'relevance', label: 'Relevance' },
+  { id: 'price_low', label: 'Price: Low to High' },
+  { id: 'price_high', label: 'Price: High to Low' },
+  { id: 'rating', label: 'Rating' },
+  { id: 'newest', label: 'Newest' },
 ];
 
 export default function SearchScreen() {
-  const { q } = useLocalSearchParams<{ q?: string }>();
-  const dispatch = useDispatch();
-  const { products, searchResults, categories } = useSelector((state: RootState) => state.products);
+  const { q } = useLocalSearchParams();
+  const [searchQuery, setSearchQuery] = useState((q as string) || '');
+  const [selectedSort, setSelectedSort] = useState(SORT_OPTIONS[0]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
-  const [searchQuery, setSearchQuery] = useState(q || '');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [sortBy, setSortBy] = useState(SORT_OPTIONS[0]);
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Fuzzy search function
-  const fuzzyMatch = (text: string, query: string): number => {
-    const textLower = text.toLowerCase();
-    const queryLower = query.toLowerCase();
-    
-    // Exact match gets highest score
-    if (textLower.includes(queryLower)) {
-      return textLower.indexOf(queryLower) === 0 ? 100 : 80;
-    }
-    
-    // Character-by-character fuzzy matching
-    let score = 0;
-    let queryIndex = 0;
-    
-    for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
-      if (textLower[i] === queryLower[queryIndex]) {
-        score += 1;
-        queryIndex++;
-      }
-    }
-    
-    // Return percentage match
-    return queryIndex === queryLower.length ? (score / queryLower.length) * 60 : 0;
-  };
+  const { products, categories, searchResults } = useSelector((state: RootState) => state.products);
+  const dispatch = useDispatch();
 
   const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    
     if (!query.trim()) {
       dispatch(setSearchResults([]));
       return;
     }
 
-    // Enhanced search with fuzzy matching and scoring
-    let searchResults = products.map(product => {
-      const nameScore = fuzzyMatch(product.name, query);
-      const brandScore = fuzzyMatch(product.brand, query);
-      const descriptionScore = fuzzyMatch(product.description, query);
-      const categoryScore = fuzzyMatch(product.category.name, query);
+    const filtered = products.filter(product => {
+      const matchesQuery = fuzzyMatch(product.name.toLowerCase(), query.toLowerCase()) ||
+                          fuzzyMatch(product.description?.toLowerCase() || '', query.toLowerCase()) ||
+                          fuzzyMatch(product.brand?.toLowerCase() || '', query.toLowerCase());
       
-      // Calculate total score with weights
-      const totalScore = nameScore * 0.4 + brandScore * 0.3 + descriptionScore * 0.2 + categoryScore * 0.1;
+      const matchesCategory = !selectedCategory || product.category_id === selectedCategory;
       
-      return { product, score: totalScore };
-    }).filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(item => item.product);
-
-    let filtered = searchResults;
-
-    // Apply category filter
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.category.id === selectedCategory);
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const aValue = a[sortBy.key as keyof typeof a];
-      const bValue = b[sortBy.key as keyof typeof b];
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortBy.value === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-      
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortBy.value === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-      
-      return 0;
+      return matchesQuery && matchesCategory;
     });
 
-    dispatch(setSearchResults(filtered));
-  }, [dispatch, products, selectedCategory, sortBy]);
+    // Sort results
+    let sorted = [...filtered];
+    switch (selectedSort.id) {
+      case 'price_low':
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_high':
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case 'newest':
+        sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+        break;
+    }
+
+    dispatch(setSearchResults(sorted));
+  }, [products, selectedCategory, selectedSort, dispatch]);
 
   useEffect(() => {
-    if (q) {
-      handleSearch(q);
+    const timeoutId = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, handleSearch]);
+
+  const fuzzyMatch = (text: string, query: string): boolean => {
+    if (!text || !query) return false;
+    
+    // Simple fuzzy matching - check if all characters in query exist in text in order
+    let textIndex = 0;
+    let queryIndex = 0;
+    
+    while (textIndex < text.length && queryIndex < query.length) {
+      if (text[textIndex] === query[queryIndex]) {
+        queryIndex++;
+      }
+      textIndex++;
     }
-  }, [q, handleSearch]);
+    
+    return queryIndex === query.length;
+  };
 
   const handleCategoryFilter = (categoryId: string) => {
-    setSelectedCategory(categoryId === selectedCategory ? '' : categoryId);
-    handleSearch(searchQuery);
+    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
   };
 
   const handleSortChange = (option: typeof SORT_OPTIONS[0]) => {
-    setSortBy(option);
-    handleSearch(searchQuery);
+    setSelectedSort(option);
   };
 
   return (
     <SafeAreaView style={commonStyles.safeArea}>
       <View style={styles.container}>
         {/* Search Header */}
-        <SearchBar
-          value={searchQuery}
-          onSearch={handleSearch}
-          placeholder="Search for products..."
-          realTimeSearch={true}
-        />
+        <View style={styles.header}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search products..."
+            autoFocus
+          />
+        </View>
 
         {/* Filters */}
         <View style={styles.filtersContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesFilter}>
+          {/* Category Filter */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
             <TouchableOpacity
               style={[styles.filterChip, !selectedCategory && styles.filterChipActive]}
-              onPress={() => handleCategoryFilter('')}
+              onPress={() => setSelectedCategory(null)}
             >
               <Text style={[styles.filterChipText, !selectedCategory && styles.filterChipTextActive]}>
                 All
@@ -148,64 +128,49 @@ export default function SearchScreen() {
                 style={[styles.filterChip, selectedCategory === category.id && styles.filterChipActive]}
                 onPress={() => handleCategoryFilter(category.id)}
               >
-                <Text style={[
-                  styles.filterChipText,
-                  selectedCategory === category.id && styles.filterChipTextActive
-                ]}>
+                <Text style={[styles.filterChipText, selectedCategory === category.id && styles.filterChipTextActive]}>
                   {category.name}
                 </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <TouchableOpacity
-            style={styles.sortButton}
-            onPress={() => setShowFilters(!showFilters)}
-          >
-            <Icon name="funnel-outline" size={20} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Sort Options */}
-        {showFilters && (
-          <View style={styles.sortContainer}>
-            <Text style={styles.sortTitle}>Sort by:</Text>
-            {SORT_OPTIONS.map((option, index) => (
+          {/* Sort Filter */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortFilter}>
+            {SORT_OPTIONS.map((option) => (
               <TouchableOpacity
-                key={index}
-                style={styles.sortOption}
+                key={option.id}
+                style={[styles.filterChip, selectedSort.id === option.id && styles.filterChipActive]}
                 onPress={() => handleSortChange(option)}
               >
-                <Text style={[
-                  styles.sortOptionText,
-                  sortBy.key === option.key && sortBy.value === option.value && styles.sortOptionTextActive
-                ]}>
+                <Text style={[styles.filterChipText, selectedSort.id === option.id && styles.filterChipTextActive]}>
                   {option.label}
                 </Text>
-                {sortBy.key === option.key && sortBy.value === option.value && (
-                  <Icon name="checkmark" size={20} color={colors.primary} />
-                )}
               </TouchableOpacity>
             ))}
-          </View>
-        )}
+          </ScrollView>
+        </View>
 
         {/* Results */}
-        <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
-          {searchQuery && (
-            <Text style={styles.resultsCount}>
-              {searchResults.length} results for "{searchQuery}"
-            </Text>
-          )}
-          
-          {searchResults.length === 0 && searchQuery ? (
-            <View style={styles.noResults}>
-              <Icon name="search-outline" size={64} color={colors.textSecondary} />
-              <Text style={styles.noResultsText}>No products found</Text>
-              <Text style={styles.noResultsSubtext}>Try adjusting your search or filters</Text>
+        <ScrollView style={styles.results} showsVerticalScrollIndicator={false}>
+          {searchQuery.trim() === '' ? (
+            <View style={styles.emptyState}>
+              <Icon name="search" size={64} color={colors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>Search for products</Text>
+              <Text style={styles.emptyStateText}>
+                Find electronics, accessories, and more
+              </Text>
+            </View>
+          ) : searchResults.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Icon name="search" size={64} color={colors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>No results found</Text>
+              <Text style={styles.emptyStateText}>
+                Try adjusting your search or filters
+              </Text>
             </View>
           ) : (
-            <View style={styles.productsGrid}>
+            <View style={styles.productGrid}>
               {searchResults.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -222,21 +187,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  filtersContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  header: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  categoriesFilter: {
-    flex: 1,
+  filtersContainer: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  categoryFilter: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  sortFilter: {
+    paddingHorizontal: spacing.md,
   },
   filterChip: {
-    backgroundColor: colors.backgroundAlt,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 20,
     marginRight: spacing.sm,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -246,76 +220,36 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: 14,
-    fontWeight: '500',
     color: colors.text,
+    fontWeight: '500',
   },
   filterChipTextActive: {
-    color: colors.background,
+    color: colors.white,
   },
-  sortButton: {
-    padding: spacing.sm,
-    backgroundColor: colors.backgroundAlt,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sortContainer: {
-    backgroundColor: colors.card,
-    marginHorizontal: spacing.md,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sortTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  sortOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  sortOptionText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  sortOptionTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  resultsContainer: {
+  results: {
     flex: 1,
     paddingHorizontal: spacing.md,
   },
-  resultsCount: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  noResults: {
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: spacing.xl * 2,
   },
-  noResultsText: {
+  emptyStateTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  noResultsSubtext: {
+  emptyStateText: {
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: spacing.sm,
+    lineHeight: 24,
   },
-  productsGrid: {
-    paddingBottom: spacing.xl,
+  productGrid: {
+    paddingVertical: spacing.md,
   },
 });

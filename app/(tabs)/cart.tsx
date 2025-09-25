@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../../store';
+import { removeFromCart, updateQuantity, clearCart } from '../../store/slices/cartSlice';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
 import { formatKES, calculateTax, calculateShipping } from '../../utils/currency';
 import CartItem from '../../components/CartItem';
@@ -12,13 +13,41 @@ import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 
 export default function CartScreen() {
-  const { items, total, itemCount } = useSelector((state: RootState) => state.cart);
+  const dispatch = useDispatch();
+  const { items, total } = useSelector((state: RootState) => state.cart);
 
-  const tax = calculateTax(total); // 16% VAT in Kenya
-  const shipping = calculateShipping(total); // Free shipping over KES 6,500
+  const tax = calculateTax(total);
+  const shipping = calculateShipping(total);
   const finalTotal = total + tax + shipping;
 
+  const handleRemoveItem = (productId: string) => {
+    dispatch(removeFromCart(productId));
+  };
+
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      handleRemoveItem(productId);
+    } else {
+      dispatch(updateQuantity({ productId, quantity }));
+    }
+  };
+
+  const handleClearCart = () => {
+    Alert.alert(
+      'Clear Cart',
+      'Are you sure you want to remove all items from your cart?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear', style: 'destructive', onPress: () => dispatch(clearCart()) }
+      ]
+    );
+  };
+
   const handleCheckout = () => {
+    if (items.length === 0) {
+      Alert.alert('Empty Cart', 'Please add some items to your cart first.');
+      return;
+    }
     router.push('/checkout');
   };
 
@@ -30,14 +59,16 @@ export default function CartScreen() {
             <Text style={styles.title}>Shopping Cart</Text>
           </View>
           
-          <View style={styles.emptyCart}>
+          <View style={styles.emptyState}>
             <Icon name="bag-outline" size={80} color={colors.textSecondary} />
-            <Text style={styles.emptyCartText}>Your cart is empty</Text>
-            <Text style={styles.emptyCartSubtext}>Add some products to get started</Text>
+            <Text style={styles.emptyStateTitle}>Your cart is empty</Text>
+            <Text style={styles.emptyStateText}>
+              Add some products to your cart to get started
+            </Text>
             <Button
-              text="Continue Shopping"
+              text="Start Shopping"
               onPress={() => router.push('/(tabs)/home')}
-              style={styles.continueShoppingButton}
+              style={styles.startShoppingButton}
             />
           </View>
         </View>
@@ -51,46 +82,44 @@ export default function CartScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Shopping Cart</Text>
-          <Text style={styles.itemCount}>{itemCount} items</Text>
+          <TouchableOpacity onPress={handleClearCart}>
+            <Text style={styles.clearText}>Clear All</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Cart Items */}
-        <ScrollView style={styles.itemsContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.itemsList} showsVerticalScrollIndicator={false}>
           {items.map((item) => (
-            <CartItem key={item.id} item={item} />
+            <CartItem
+              key={item.product.id}
+              item={item}
+              onUpdateQuantity={(quantity) => handleUpdateQuantity(item.product.id, quantity)}
+              onRemove={() => handleRemoveItem(item.product.id)}
+            />
           ))}
         </ScrollView>
 
-        {/* Order Summary */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Order Summary</Text>
-          
+        {/* Summary */}
+        <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>{formatKES(total)}</Text>
           </View>
-          
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
             <Text style={styles.summaryValue}>{formatKES(tax)}</Text>
           </View>
-          
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Shipping</Text>
-            <Text style={styles.summaryValue}>
-              {shipping === 0 ? 'FREE' : formatKES(shipping)}
-            </Text>
+            <Text style={styles.summaryValue}>{shipping === 0 ? 'Free' : formatKES(shipping)}</Text>
           </View>
-          
-          <View style={styles.divider} />
-          
-          <View style={styles.summaryRow}>
+          <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>{formatKES(finalTotal)}</Text>
           </View>
           
           <Button
-            text="Proceed to Checkout"
+            text={`Checkout (${items.length} item${items.length !== 1 ? 's' : ''})`}
             onPress={handleCheckout}
             style={styles.checkoutButton}
           />
@@ -119,50 +148,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-  itemCount: {
+  clearText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: colors.error,
+    fontWeight: '500',
   },
-  itemsContainer: {
+  itemsList: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
   },
-  emptyCart: {
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
   },
-  emptyCartText: {
+  emptyStateTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: colors.text,
-    marginTop: spacing.md,
-    textAlign: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  emptyCartSubtext: {
+  emptyStateText: {
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: spacing.sm,
+    lineHeight: 24,
     marginBottom: spacing.xl,
   },
-  continueShoppingButton: {
-    width: '100%',
-    maxWidth: 300,
+  startShoppingButton: {
+    paddingHorizontal: spacing.xl,
   },
-  summaryContainer: {
-    backgroundColor: colors.card,
-    padding: spacing.md,
+  summary: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.md,
+    backgroundColor: colors.backgroundAlt,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -172,29 +195,31 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 16,
-    color: colors.text,
+    color: colors.textSecondary,
   },
   summaryValue: {
     fontSize: 16,
     color: colors.text,
     fontWeight: '500',
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
+  totalRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
   totalLabel: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.text,
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: colors.primary,
   },
   checkoutButton: {
-    marginTop: spacing.md,
+    width: '100%',
   },
 });

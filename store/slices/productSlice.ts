@@ -1,16 +1,13 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Product, Category, FilterOptions, SortOption } from '../../types';
+import { Product, Category } from '../../types';
 
 interface ProductState {
   products: Product[];
   categories: Category[];
   featuredProducts: Product[];
   searchResults: Product[];
-  currentProduct: Product | null;
-  filters: FilterOptions;
-  sortBy: SortOption;
-  isLoading: boolean;
+  loading: boolean;
   error: string | null;
 }
 
@@ -19,16 +16,7 @@ const initialState: ProductState = {
   categories: [],
   featuredProducts: [],
   searchResults: [],
-  currentProduct: null,
-  filters: {
-    categories: [],
-    brands: [],
-    priceRange: { min: 0, max: 10000 },
-    rating: 0,
-    inStock: false,
-  },
-  sortBy: { key: 'name', label: 'Name', value: 'asc' },
-  isLoading: false,
+  loading: false,
   error: null,
 };
 
@@ -48,17 +36,20 @@ const productSlice = createSlice({
     setSearchResults: (state, action: PayloadAction<Product[]>) => {
       state.searchResults = action.payload;
     },
-    setCurrentProduct: (state, action: PayloadAction<Product | null>) => {
-      state.currentProduct = action.payload;
+    addProduct: (state, action: PayloadAction<Product>) => {
+      state.products.unshift(action.payload);
     },
-    updateFilters: (state, action: PayloadAction<Partial<FilterOptions>>) => {
-      state.filters = { ...state.filters, ...action.payload };
+    updateProduct: (state, action: PayloadAction<Product>) => {
+      const index = state.products.findIndex(p => p.id === action.payload.id);
+      if (index !== -1) {
+        state.products[index] = action.payload;
+      }
     },
-    setSortBy: (state, action: PayloadAction<SortOption>) => {
-      state.sortBy = action.payload;
+    removeProduct: (state, action: PayloadAction<string>) => {
+      state.products = state.products.filter(p => p.id !== action.payload);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
+      state.loading = action.payload;
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
@@ -71,9 +62,9 @@ export const {
   setCategories,
   setFeaturedProducts,
   setSearchResults,
-  setCurrentProduct,
-  updateFilters,
-  setSortBy,
+  addProduct,
+  updateProduct,
+  removeProduct,
   setLoading,
   setError,
 } = productSlice.actions;

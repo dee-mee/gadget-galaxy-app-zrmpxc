@@ -22,134 +22,111 @@ export interface Address {
   isDefault: boolean;
 }
 
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  discount?: number;
-  images: string[];
-  category: Category;
-  brand: string;
-  stock: number;
-  rating: number;
-  reviewCount: number;
-  features: string[];
-  specifications: { [key: string]: string };
-  isWishlisted?: boolean;
-  isFeatured?: boolean;
-  isActive?: boolean;
-}
-
 export interface Category {
   id: string;
   name: string;
-  icon: string;
-  image?: string;
   description?: string;
+  icon?: string;
+  image_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  original_price?: number;
+  discount?: number;
+  images: string[];
+  category_id?: string;
+  category?: Category;
+  brand?: string;
+  stock: number;
+  rating?: number;
+  review_count?: number;
+  features?: string[];
+  specifications?: Record<string, any>;
+  is_featured: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CartItem {
   id: string;
   product: Product;
   quantity: number;
-  selectedVariant?: ProductVariant;
-}
-
-export interface ProductVariant {
-  id: string;
-  name: string;
-  value: string;
-  priceModifier: number;
 }
 
 export interface Order {
   id: string;
-  userId: string;
-  items: CartItem[];
+  user_id: string;
+  order_date: string;
   subtotal: number;
   tax: number;
   shipping: number;
   total: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  shippingAddress: Address;
-  paymentMethod: PaymentMethod;
-  orderDate: string;
-  estimatedDelivery?: string;
-  trackingNumber?: string;
+  shipping_address?: any;
+  payment_method?: any;
+  tracking_number?: string;
+  estimated_delivery?: string;
+  created_at?: string;
+  updated_at?: string;
+  items?: OrderItem[];
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product?: Product;
+  quantity: number;
+  price: number;
+  created_at?: string;
 }
 
 export interface PaymentMethod {
   id: string;
-  type: 'card' | 'cash_on_delivery';
+  type: 'card' | 'mobile_money' | 'cash_on_delivery';
   cardLast4?: string;
   cardBrand?: string;
-}
-
-export interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  productId: string;
-  rating: number;
-  comment: string;
-  date: string;
-  helpful: number;
-}
-
-export interface SearchSuggestion {
-  id: string;
-  text: string;
-  type: 'product' | 'category' | 'brand';
-}
-
-export interface FilterOptions {
-  categories: string[];
-  brands: string[];
-  priceRange: {
-    min: number;
-    max: number;
-  };
-  rating: number;
-  inStock: boolean;
-}
-
-export interface SortOption {
-  key: string;
-  label: string;
-  value: 'asc' | 'desc';
-}
-
-// Admin specific types
-export interface AdminStats {
-  totalProducts: number;
-  totalOrders: number;
-  totalUsers: number;
-  totalRevenue: number;
-  recentOrders: Order[];
-  lowStockProducts: Product[];
+  cardExpiry?: string;
+  mobileNumber?: string;
+  provider?: string;
+  isDefault?: boolean;
 }
 
 export interface ProductFormData {
   name: string;
   description: string;
-  price: number;
-  originalPrice?: number;
-  discount?: number;
-  images: string[];
-  categoryId: string;
+  price: string;
+  originalPrice: string;
+  discount: string;
   brand: string;
-  stock: number;
+  stock: string;
+  categoryId: string;
+  images: string[];
   features: string[];
-  specifications: { [key: string]: string };
+  specifications: Record<string, string>;
   isFeatured: boolean;
   isActive: boolean;
 }
 
-export interface CategoryFormData {
-  name: string;
-  description: string;
-  icon: string;
-  image?: string;
+export interface AdminStats {
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+  totalUsers: number;
+  recentOrders: Order[];
+}
+
+export interface WishlistItem {
+  id: string;
+  user_id: string;
+  product_id: string;
+  product?: Product;
+  created_at: string;
 }
