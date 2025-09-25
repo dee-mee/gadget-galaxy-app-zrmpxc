@@ -6,6 +6,7 @@ export interface User {
   lastName: string;
   phone?: string;
   avatar?: string;
+  role: 'user' | 'admin';
   addresses: Address[];
   createdAt: string;
 }
@@ -38,6 +39,7 @@ export interface Product {
   specifications: { [key: string]: string };
   isWishlisted?: boolean;
   isFeatured?: boolean;
+  isActive?: boolean;
 }
 
 export interface Category {
@@ -45,6 +47,7 @@ export interface Category {
   name: string;
   icon: string;
   image?: string;
+  description?: string;
 }
 
 export interface CartItem {
@@ -116,4 +119,37 @@ export interface SortOption {
   key: string;
   label: string;
   value: 'asc' | 'desc';
+}
+
+// Admin specific types
+export interface AdminStats {
+  totalProducts: number;
+  totalOrders: number;
+  totalUsers: number;
+  totalRevenue: number;
+  recentOrders: Order[];
+  lowStockProducts: Product[];
+}
+
+export interface ProductFormData {
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  images: string[];
+  categoryId: string;
+  brand: string;
+  stock: number;
+  features: string[];
+  specifications: { [key: string]: string };
+  isFeatured: boolean;
+  isActive: boolean;
+}
+
+export interface CategoryFormData {
+  name: string;
+  description: string;
+  icon: string;
+  image?: string;
 }
