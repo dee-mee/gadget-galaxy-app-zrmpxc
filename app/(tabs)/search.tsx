@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
@@ -28,12 +28,6 @@ export default function SearchScreen() {
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0]);
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    if (q) {
-      handleSearch(q);
-    }
-  }, [q]);
-
   // Fuzzy search function
   const fuzzyMatch = (text: string, query: string): number => {
     const textLower = text.toLowerCase();
@@ -59,7 +53,7 @@ export default function SearchScreen() {
     return queryIndex === queryLower.length ? (score / queryLower.length) * 60 : 0;
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     
     if (!query.trim()) {
@@ -108,7 +102,13 @@ export default function SearchScreen() {
     });
 
     dispatch(setSearchResults(filtered));
-  };
+  }, [dispatch, products, selectedCategory, sortBy]);
+
+  useEffect(() => {
+    if (q) {
+      handleSearch(q);
+    }
+  }, [q, handleSearch]);
 
   const handleCategoryFilter = (categoryId: string) => {
     setSelectedCategory(categoryId === selectedCategory ? '' : categoryId);

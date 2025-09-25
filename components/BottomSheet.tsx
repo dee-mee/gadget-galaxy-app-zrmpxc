@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -39,6 +40,16 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
   const lastGestureY = useRef(0);
   const startPositionY = useRef(0);
 
+  const snapToPoint = useCallback((point: number) => {
+    setCurrentSnapPoint(point);
+    gestureTranslateY.setValue(0);
+    Animated.timing(translateY, {
+      toValue: SCREEN_HEIGHT - point,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [translateY, gestureTranslateY]);
+
   useEffect(() => {
     if (isVisible) {
       setCurrentSnapPoint(SNAP_POINTS.HALF);
@@ -71,20 +82,10 @@ const SimpleBottomSheet: React.FC<SimpleBottomSheetProps> = ({
         }),
       ]).start();
     }
-  }, [isVisible, translateY, backdropOpacity]);
+  }, [isVisible, translateY, backdropOpacity, gestureTranslateY]);
 
   const handleBackdropPress = () => {
     onClose?.();
-  };
-
-  const snapToPoint = (point: number) => {
-    setCurrentSnapPoint(point);
-    gestureTranslateY.setValue(0);
-    Animated.timing(translateY, {
-      toValue: SCREEN_HEIGHT - point,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
   };
 
   // Determines the closest snap point based on velocity and position

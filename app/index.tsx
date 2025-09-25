@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
@@ -12,7 +12,7 @@ export default function Index() {
   const { isAuthenticated, checkAuthStatus } = useAuth();
   const dispatch = useDispatch();
 
-  useEffect(() => {
+  const initializeApp = useCallback(() => {
     // Initialize app data
     dispatch(setProducts(mockProducts));
     dispatch(setCategories(mockCategories));
@@ -20,7 +20,11 @@ export default function Index() {
     
     // Check authentication status
     checkAuthStatus();
-  }, []);
+  }, [dispatch, checkAuthStatus]);
+
+  useEffect(() => {
+    initializeApp();
+  }, [initializeApp]);
 
   if (isAuthenticated) {
     return <Redirect href="/(tabs)/home" />;
