@@ -29,8 +29,8 @@ export const mockProducts: Product[] = [
     id: '1',
     name: 'iPhone 15 Pro',
     description: 'The most advanced iPhone yet with titanium design, A17 Pro chip, and pro camera system.',
-    price: 999,
-    originalPrice: 1099,
+    price: 129870, // ~$999 in KES
+    originalPrice: 142870, // ~$1099 in KES
     discount: 9,
     images: [
       'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
@@ -54,8 +54,8 @@ export const mockProducts: Product[] = [
     id: '2',
     name: 'Samsung Galaxy S24',
     description: 'Experience the power of Galaxy AI with advanced photography and seamless performance.',
-    price: 849,
-    originalPrice: 899,
+    price: 110370, // ~$849 in KES
+    originalPrice: 116870, // ~$899 in KES
     discount: 6,
     images: [
       'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400',
@@ -79,7 +79,7 @@ export const mockProducts: Product[] = [
     id: '3',
     name: 'AirPods Pro (2nd Gen)',
     description: 'Immersive sound with active noise cancellation and spatial audio.',
-    price: 249,
+    price: 32370, // ~$249 in KES
     images: [
       'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=400',
     ],
@@ -101,8 +101,8 @@ export const mockProducts: Product[] = [
     id: '4',
     name: 'Sony WH-1000XM5',
     description: 'Industry-leading noise canceling with exceptional sound quality.',
-    price: 399,
-    originalPrice: 449,
+    price: 51870, // ~$399 in KES
+    originalPrice: 58370, // ~$449 in KES
     discount: 11,
     images: [
       'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400',
@@ -124,7 +124,7 @@ export const mockProducts: Product[] = [
     id: '5',
     name: 'MagSafe Charger',
     description: 'Wireless charging made effortless with perfect alignment every time.',
-    price: 39,
+    price: 5070, // ~$39 in KES
     images: [
       'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400',
     ],
@@ -145,7 +145,7 @@ export const mockProducts: Product[] = [
     id: '6',
     name: 'Anker PowerCore 10000',
     description: 'Ultra-compact portable charger with high-speed charging technology.',
-    price: 29,
+    price: 3770, // ~$29 in KES
     images: [
       'https://images.unsplash.com/photo-1609592806596-b43bada2f4b5?w=400',
     ],
@@ -166,7 +166,7 @@ export const mockProducts: Product[] = [
     id: '7',
     name: 'Apple Watch Series 9',
     description: 'The most advanced Apple Watch with new health features and faster performance.',
-    price: 399,
+    price: 51870, // ~$399 in KES
     images: [
       'https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=400',
     ],
@@ -187,8 +187,8 @@ export const mockProducts: Product[] = [
     id: '8',
     name: 'Samsung Galaxy Buds2 Pro',
     description: 'Premium earbuds with intelligent ANC and 360 Audio for immersive sound.',
-    price: 179,
-    originalPrice: 229,
+    price: 23270, // ~$179 in KES
+    originalPrice: 29770, // ~$229 in KES
     discount: 22,
     images: [
       'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400',
@@ -240,10 +240,10 @@ export const mockOrders: Order[] = [
         quantity: 1,
       },
     ],
-    subtotal: 999,
-    tax: 79.92,
+    subtotal: 129870,
+    tax: 10390,
     shipping: 0,
-    total: 1078.92,
+    total: 140260,
     status: 'delivered',
     shippingAddress: mockUser.addresses[0],
     paymentMethod: {
@@ -270,10 +270,10 @@ export const mockOrders: Order[] = [
         quantity: 1,
       },
     ],
-    subtotal: 288,
-    tax: 23.04,
-    shipping: 9.99,
-    total: 321.03,
+    subtotal: 37440,
+    tax: 2995,
+    shipping: 1300,
+    total: 41735,
     status: 'shipped',
     shippingAddress: mockUser.addresses[0],
     paymentMethod: {

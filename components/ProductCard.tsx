@@ -72,9 +72,9 @@ export default function ProductCard({ product, onPress }: ProductCardProps) {
         </View>
         
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>${product.price}</Text>
+          <Text style={styles.price}>KES {product.price.toLocaleString()}</Text>
           {product.originalPrice && (
-            <Text style={styles.originalPrice}>${product.originalPrice}</Text>
+            <Text style={styles.originalPrice}>KES {product.originalPrice.toLocaleString()}</Text>
           )}
         </View>
         

@@ -13,8 +13,8 @@ import Icon from '../../components/Icon';
 export default function CartScreen() {
   const { items, total, itemCount } = useSelector((state: RootState) => state.cart);
 
-  const tax = total * 0.08; // 8% tax
-  const shipping = total > 50 ? 0 : 9.99; // Free shipping over $50
+  const tax = Math.round(total * 0.16); // 16% VAT in Kenya
+  const shipping = total > 6500 ? 0 : 500; // Free shipping over KES 6,500
   const finalTotal = total + tax + shipping;
 
   const handleCheckout = () => {
@@ -66,18 +66,18 @@ export default function CartScreen() {
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${total.toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>KES {total.toLocaleString()}</Text>
           </View>
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>KES {tax.toLocaleString()}</Text>
           </View>
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Shipping</Text>
             <Text style={styles.summaryValue}>
-              {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+              {shipping === 0 ? 'FREE' : `KES ${shipping.toLocaleString()}`}
             </Text>
           </View>
           
@@ -85,7 +85,7 @@ export default function CartScreen() {
           
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${finalTotal.toFixed(2)}</Text>
+            <Text style={styles.totalValue}>KES {finalTotal.toLocaleString()}</Text>
           </View>
           
           <Button

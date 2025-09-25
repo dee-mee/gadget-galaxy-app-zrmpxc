@@ -34,6 +34,31 @@ export default function SearchScreen() {
     }
   }, [q]);
 
+  // Fuzzy search function
+  const fuzzyMatch = (text: string, query: string): number => {
+    const textLower = text.toLowerCase();
+    const queryLower = query.toLowerCase();
+    
+    // Exact match gets highest score
+    if (textLower.includes(queryLower)) {
+      return textLower.indexOf(queryLower) === 0 ? 100 : 80;
+    }
+    
+    // Character-by-character fuzzy matching
+    let score = 0;
+    let queryIndex = 0;
+    
+    for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
+      if (textLower[i] === queryLower[queryIndex]) {
+        score += 1;
+        queryIndex++;
+      }
+    }
+    
+    // Return percentage match
+    return queryIndex === queryLower.length ? (score / queryLower.length) * 60 : 0;
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     
@@ -42,11 +67,22 @@ export default function SearchScreen() {
       return;
     }
 
-    let filtered = products.filter(product =>
-      product.name.toLowerCase().includes(query.toLowerCase()) ||
-      product.brand.toLowerCase().includes(query.toLowerCase()) ||
-      product.description.toLowerCase().includes(query.toLowerCase())
-    );
+    // Enhanced search with fuzzy matching and scoring
+    let searchResults = products.map(product => {
+      const nameScore = fuzzyMatch(product.name, query);
+      const brandScore = fuzzyMatch(product.brand, query);
+      const descriptionScore = fuzzyMatch(product.description, query);
+      const categoryScore = fuzzyMatch(product.category.name, query);
+      
+      // Calculate total score with weights
+      const totalScore = nameScore * 0.4 + brandScore * 0.3 + descriptionScore * 0.2 + categoryScore * 0.1;
+      
+      return { product, score: totalScore };
+    }).filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.product);
+
+    let filtered = searchResults;
 
     // Apply category filter
     if (selectedCategory) {
@@ -92,6 +128,7 @@ export default function SearchScreen() {
           value={searchQuery}
           onSearch={handleSearch}
           placeholder="Search for products..."
+          realTimeSearch={true}
         />
 
         {/* Filters */}

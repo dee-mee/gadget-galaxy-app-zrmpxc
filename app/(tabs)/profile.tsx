@@ -93,35 +93,35 @@ export default function ProfileScreen() {
             icon="location-outline"
             title="Addresses"
             subtitle="Manage delivery addresses"
-            onPress={() => router.push('/addresses')}
+            onPress={() => router.push('/profile/addresses')}
           />
           
           <MenuItem
             icon="card-outline"
             title="Payment Methods"
             subtitle="Manage payment options"
-            onPress={() => router.push('/payment-methods')}
+            onPress={() => router.push('/profile/payment-methods')}
           />
           
           <MenuItem
             icon="notifications-outline"
             title="Notifications"
             subtitle="Manage notifications"
-            onPress={() => router.push('/notifications')}
+            onPress={() => router.push('/profile/notifications')}
           />
           
           <MenuItem
             icon="help-circle-outline"
             title="Help & Support"
             subtitle="Get help and contact us"
-            onPress={() => router.push('/support')}
+            onPress={() => router.push('/profile/support')}
           />
           
           <MenuItem
             icon="information-circle-outline"
             title="About"
             subtitle="App version and info"
-            onPress={() => router.push('/about')}
+            onPress={() => router.push('/profile/about')}
           />
         </View>
 

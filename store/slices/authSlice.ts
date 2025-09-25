@@ -45,6 +45,9 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+    updateUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -57,6 +60,7 @@ export const {
   loginFailure,
   logout,
   updateProfile,
+  updateUser,
   clearError,
 } = authSlice.actions;
 

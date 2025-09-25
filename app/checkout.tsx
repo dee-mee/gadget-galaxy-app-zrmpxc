@@ -34,8 +34,8 @@ export default function CheckoutScreen() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const tax = total * 0.08;
-  const shipping = total > 50 ? 0 : 9.99;
+  const tax = Math.round(total * 0.16); // 16% VAT in Kenya
+  const shipping = total > 6500 ? 0 : 500; // Free shipping over KES 6,500
   const finalTotal = total + tax + shipping;
 
   const handlePlaceOrder = async () => {
@@ -126,7 +126,7 @@ export default function CheckoutScreen() {
                 <View key={item.id} style={styles.orderItem}>
                   <Text style={styles.itemName}>{item.product.name}</Text>
                   <Text style={styles.itemDetails}>
-                    {item.quantity} × ${item.product.price} = ${(item.quantity * item.product.price).toFixed(2)}
+                    {item.quantity} × KES {item.product.price.toLocaleString()} = KES {(item.quantity * item.product.price).toLocaleString()}
                   </Text>
                 </View>
               ))}
@@ -135,21 +135,21 @@ export default function CheckoutScreen() {
               
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>${total.toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>KES {total.toLocaleString()}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax</Text>
-                <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>KES {tax.toLocaleString()}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping</Text>
                 <Text style={styles.summaryValue}>
-                  {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                  {shipping === 0 ? 'FREE' : `KES ${shipping.toLocaleString()}`}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>${finalTotal.toFixed(2)}</Text>
+                <Text style={styles.totalValue}>KES {finalTotal.toLocaleString()}</Text>
               </View>
             </View>
           </View>
@@ -254,7 +254,7 @@ export default function CheckoutScreen() {
         {/* Place Order Button */}
         <View style={styles.bottomActions}>
           <Button
-            text={isProcessing ? 'Processing...' : `Place Order - $${finalTotal.toFixed(2)}`}
+            text={isProcessing ? 'Processing...' : `Place Order - KES ${finalTotal.toLocaleString()}`}
             onPress={handlePlaceOrder}
             style={[styles.placeOrderButton, isProcessing && styles.disabledButton]}
           />

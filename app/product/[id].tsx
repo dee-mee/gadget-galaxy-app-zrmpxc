@@ -135,9 +135,9 @@ export default function ProductDetailScreen() {
 
             {/* Price */}
             <View style={styles.priceContainer}>
-              <Text style={styles.price}>${product.price}</Text>
+              <Text style={styles.price}>KES {product.price.toLocaleString()}</Text>
               {product.originalPrice && (
-                <Text style={styles.originalPrice}>${product.originalPrice}</Text>
+                <Text style={styles.originalPrice}>KES {product.originalPrice.toLocaleString()}</Text>
               )}
             </View>
 
@@ -208,7 +208,7 @@ export default function ProductDetailScreen() {
           </View>
 
           <Button
-            text={`Add to Cart - $${(product.price * quantity).toFixed(2)}`}
+            text={`Add to Cart - KES ${(product.price * quantity).toLocaleString()}`}
             onPress={handleAddToCart}
             style={[styles.addToCartButton, product.stock === 0 && styles.disabledButton]}
           />

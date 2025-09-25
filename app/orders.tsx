@@ -126,7 +126,7 @@ export default function OrdersScreen() {
               </View>
 
               <View style={styles.orderFooter}>
-                <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+                <Text style={styles.orderTotal}>KES {order.total.toLocaleString()}</Text>
                 <View style={styles.orderActions}>
                   {order.status === 'delivered' && (
                     <TouchableOpacity style={styles.reorderButton}>
