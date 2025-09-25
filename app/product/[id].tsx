@@ -8,6 +8,7 @@ import { RootState } from '../../store';
 import { addToCart } from '../../store/slices/cartSlice';
 import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
+import { formatKES } from '../../utils/currency';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 
@@ -135,9 +136,9 @@ export default function ProductDetailScreen() {
 
             {/* Price */}
             <View style={styles.priceContainer}>
-              <Text style={styles.price}>KES {product.price.toLocaleString()}</Text>
+              <Text style={styles.price}>{formatKES(product.price)}</Text>
               {product.originalPrice && (
-                <Text style={styles.originalPrice}>KES {product.originalPrice.toLocaleString()}</Text>
+                <Text style={styles.originalPrice}>{formatKES(product.originalPrice)}</Text>
               )}
             </View>
 
@@ -208,7 +209,7 @@ export default function ProductDetailScreen() {
           </View>
 
           <Button
-            text={`Add to Cart - KES ${(product.price * quantity).toLocaleString()}`}
+            text={`Add to Cart - ${formatKES(product.price * quantity)}`}
             onPress={handleAddToCart}
             style={[styles.addToCartButton, product.stock === 0 && styles.disabledButton]}
           />

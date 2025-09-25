@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../store';
 import { colors, spacing, commonStyles } from '../styles/commonStyles';
+import { formatKES } from '../utils/currency';
 import Icon from '../components/Icon';
 import Button from '../components/Button';
 
@@ -126,7 +127,7 @@ export default function OrdersScreen() {
               </View>
 
               <View style={styles.orderFooter}>
-                <Text style={styles.orderTotal}>KES {order.total.toLocaleString()}</Text>
+                <Text style={styles.orderTotal}>{formatKES(order.total)}</Text>
                 <View style={styles.orderActions}>
                   {order.status === 'delivered' && (
                     <TouchableOpacity style={styles.reorderButton}>

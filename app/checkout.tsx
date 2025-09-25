@@ -8,6 +8,7 @@ import { RootState } from '../store';
 import { clearCart } from '../store/slices/cartSlice';
 import { addOrder } from '../store/slices/orderSlice';
 import { colors, spacing, commonStyles } from '../styles/commonStyles';
+import { formatKES, calculateTax, calculateShipping } from '../utils/currency';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
@@ -34,8 +35,8 @@ export default function CheckoutScreen() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const tax = Math.round(total * 0.16); // 16% VAT in Kenya
-  const shipping = total > 6500 ? 0 : 500; // Free shipping over KES 6,500
+  const tax = calculateTax(total); // 16% VAT in Kenya
+  const shipping = calculateShipping(total); // Free shipping over KES 6,500
   const finalTotal = total + tax + shipping;
 
   const handlePlaceOrder = async () => {
@@ -126,7 +127,7 @@ export default function CheckoutScreen() {
                 <View key={item.id} style={styles.orderItem}>
                   <Text style={styles.itemName}>{item.product.name}</Text>
                   <Text style={styles.itemDetails}>
-                    {item.quantity} × KES {item.product.price.toLocaleString()} = KES {(item.quantity * item.product.price).toLocaleString()}
+                    {item.quantity} × {formatKES(item.product.price)} = {formatKES(item.quantity * item.product.price)}
                   </Text>
                 </View>
               ))}
@@ -135,21 +136,21 @@ export default function CheckoutScreen() {
               
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>KES {total.toLocaleString()}</Text>
+                <Text style={styles.summaryValue}>{formatKES(total)}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax</Text>
-                <Text style={styles.summaryValue}>KES {tax.toLocaleString()}</Text>
+                <Text style={styles.summaryValue}>{formatKES(tax)}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping</Text>
                 <Text style={styles.summaryValue}>
-                  {shipping === 0 ? 'FREE' : `KES ${shipping.toLocaleString()}`}
+                  {shipping === 0 ? 'FREE' : formatKES(shipping)}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>KES {finalTotal.toLocaleString()}</Text>
+                <Text style={styles.totalValue}>{formatKES(finalTotal)}</Text>
               </View>
             </View>
           </View>
@@ -254,7 +255,7 @@ export default function CheckoutScreen() {
         {/* Place Order Button */}
         <View style={styles.bottomActions}>
           <Button
-            text={isProcessing ? 'Processing...' : `Place Order - KES ${finalTotal.toLocaleString()}`}
+            text={isProcessing ? 'Processing...' : `Place Order - ${formatKES(finalTotal)}`}
             onPress={handlePlaceOrder}
             style={[styles.placeOrderButton, isProcessing && styles.disabledButton]}
           />

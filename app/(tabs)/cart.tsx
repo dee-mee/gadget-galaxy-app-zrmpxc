@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../../store';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
+import { formatKES, calculateTax, calculateShipping } from '../../utils/currency';
 import CartItem from '../../components/CartItem';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
@@ -13,8 +14,8 @@ import Icon from '../../components/Icon';
 export default function CartScreen() {
   const { items, total, itemCount } = useSelector((state: RootState) => state.cart);
 
-  const tax = Math.round(total * 0.16); // 16% VAT in Kenya
-  const shipping = total > 6500 ? 0 : 500; // Free shipping over KES 6,500
+  const tax = calculateTax(total); // 16% VAT in Kenya
+  const shipping = calculateShipping(total); // Free shipping over KES 6,500
   const finalTotal = total + tax + shipping;
 
   const handleCheckout = () => {
@@ -66,18 +67,18 @@ export default function CartScreen() {
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>KES {total.toLocaleString()}</Text>
+            <Text style={styles.summaryValue}>{formatKES(total)}</Text>
           </View>
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>KES {tax.toLocaleString()}</Text>
+            <Text style={styles.summaryValue}>{formatKES(tax)}</Text>
           </View>
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Shipping</Text>
             <Text style={styles.summaryValue}>
-              {shipping === 0 ? 'FREE' : `KES ${shipping.toLocaleString()}`}
+              {shipping === 0 ? 'FREE' : formatKES(shipping)}
             </Text>
           </View>
           
@@ -85,7 +86,7 @@ export default function CartScreen() {
           
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>KES {finalTotal.toLocaleString()}</Text>
+            <Text style={styles.totalValue}>{formatKES(finalTotal)}</Text>
           </View>
           
           <Button

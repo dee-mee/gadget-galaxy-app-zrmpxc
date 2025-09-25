@@ -8,6 +8,7 @@ import { colors, spacing, commonStyles } from '../styles/commonStyles';
 import { addToCart } from '../store/slices/cartSlice';
 import { addToWishlist, removeFromWishlist } from '../store/slices/wishlistSlice';
 import { RootState } from '../store';
+import { formatKES } from '../utils/currency';
 import Icon from './Icon';
 
 interface ProductCardProps {
@@ -72,9 +73,9 @@ export default function ProductCard({ product, onPress }: ProductCardProps) {
         </View>
         
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>KES {product.price.toLocaleString()}</Text>
+          <Text style={styles.price}>{formatKES(product.price)}</Text>
           {product.originalPrice && (
-            <Text style={styles.originalPrice}>KES {product.originalPrice.toLocaleString()}</Text>
+            <Text style={styles.originalPrice}>{formatKES(product.originalPrice)}</Text>
           )}
         </View>
         

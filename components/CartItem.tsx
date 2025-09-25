@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { CartItem as CartItemType } from '../types';
 import { colors, spacing } from '../styles/commonStyles';
 import { updateQuantity, removeFromCart } from '../store/slices/cartSlice';
+import { formatKES } from '../utils/currency';
 import Icon from './Icon';
 
 interface CartItemProps {
@@ -35,7 +36,7 @@ export default function CartItem({ item }: CartItemProps) {
           <View style={styles.productInfo}>
             <Text style={styles.brand}>{item.product.brand}</Text>
             <Text style={styles.name} numberOfLines={2}>{item.product.name}</Text>
-            <Text style={styles.price}>KES {item.product.price.toLocaleString()}</Text>
+            <Text style={styles.price}>{formatKES(item.product.price)}</Text>
           </View>
           
           <TouchableOpacity onPress={handleRemove} style={styles.removeButton}>
@@ -63,7 +64,7 @@ export default function CartItem({ item }: CartItemProps) {
           </View>
           
           <Text style={styles.totalPrice}>
-            KES {(item.product.price * item.quantity).toLocaleString()}
+            {formatKES(item.product.price * item.quantity)}
           </Text>
         </View>
       </View>
