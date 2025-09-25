@@ -1,89 +1,206 @@
+
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 export const colors = {
-  primary: '#162456',    // Material Blue
-  secondary: '#193cb8',  // Darker Blue
-  accent: '#64B5F6',     // Light Blue
-  background: '#101824',  // Keeping dark background
-  backgroundAlt: '#162133',  // Keeping dark background
-  text: '#e3e3e3',       // Keeping light text
-  grey: '#90CAF9',       // Light Blue Grey
-  card: '#193cb8',       // Keeping dark card background
+  primary: '#007AFF',      // iOS Blue
+  secondary: '#5856D6',    // Purple
+  accent: '#FF9500',       // Orange
+  background: '#FFFFFF',   // White background for light theme
+  backgroundAlt: '#F2F2F7', // Light gray
+  text: '#000000',         // Black text for light theme
+  textSecondary: '#8E8E93', // Gray text
+  success: '#34C759',      // Green
+  error: '#FF3B30',        // Red
+  warning: '#FF9500',      // Orange
+  card: '#FFFFFF',         // White cards
+  border: '#E5E5EA',       // Light border
+  shadow: 'rgba(0, 0, 0, 0.1)',
+};
+
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+
+export const typography = {
+  h1: {
+    fontSize: 32,
+    fontWeight: '700' as const,
+    lineHeight: 40,
+  },
+  h2: {
+    fontSize: 24,
+    fontWeight: '600' as const,
+    lineHeight: 32,
+  },
+  h3: {
+    fontSize: 20,
+    fontWeight: '600' as const,
+    lineHeight: 28,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 24,
+  },
+  caption: {
+    fontSize: 14,
+    fontWeight: '400' as const,
+    lineHeight: 20,
+  },
+  small: {
+    fontSize: 12,
+    fontWeight: '400' as const,
+    lineHeight: 16,
+  },
 };
 
 export const buttonStyles = StyleSheet.create({
-  instructionsButton: {
+  primary: {
     backgroundColor: colors.primary,
-    alignSelf: 'center',
-    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backButton: {
+  secondary: {
     backgroundColor: colors.backgroundAlt,
-    alignSelf: 'center',
-    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  outline: {
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
 });
 
 export const commonStyles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: colors.background,
-    width: '100%',
-    height: '100%',
-  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
-    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  centerContent: {
+    flex: 1,
     justifyContent: 'center',
-    maxWidth: 800,
-    width: '100%',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    textAlign: 'center',
-    color: colors.text,
-    marginBottom: 10
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 8,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  section: {
-    width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
-  buttonContainer: {
-    width: '100%',
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+  },
+  spaceBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   card: {
-    backgroundColor: colors.backgroundAlt,
-    borderColor: colors.grey,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 8,
-    width: '100%',
-    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginVertical: spacing.xs,
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  icon: {
-    width: 60,
-    height: 60,
-    tintColor: "white",
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: colors.background,
+    color: colors.text,
+  },
+  inputFocused: {
+    borderColor: colors.primary,
+  },
+  inputError: {
+    borderColor: colors.error,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 14,
+    marginTop: spacing.xs,
+  },
+  title: {
+    ...typography.h1,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  subtitle: {
+    ...typography.h2,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  text: {
+    ...typography.body,
+    color: colors.text,
+  },
+  textSecondary: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  textCenter: {
+    textAlign: 'center',
+  },
+  textBold: {
+    fontWeight: '600',
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  badge: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  badgeText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
+  },
+  shadow: {
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
   },
 });

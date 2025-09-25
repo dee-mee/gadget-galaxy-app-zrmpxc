@@ -1,52 +1,30 @@
-import React, { useState } from 'react';
-import { Text, View, Image, TouchableOpacity } from 'react-native';
-import { commonStyles, colors } from '../styles/commonStyles';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import SimpleBottomSheet from '../components/BottomSheet';
 
+import React, { useEffect } from 'react';
+import { View } from 'react-native';
+import { Redirect } from 'expo-router';
+import { useAuth } from '../hooks/useAuth';
+import { useDispatch } from 'react-redux';
+import { setProducts, setCategories, setFeaturedProducts } from '../store/slices/productSlice';
+import { mockProducts, mockCategories } from '../data/mockData';
+import { commonStyles } from '../styles/commonStyles';
 
-export default function MainScreen() {
-  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+export default function Index() {
+  const { isAuthenticated, checkAuthStatus } = useAuth();
+  const dispatch = useDispatch();
 
-  const handleOpenBottomSheet = () => {
-    setIsBottomSheetVisible(true);
-  };
+  useEffect(() => {
+    // Initialize app data
+    dispatch(setProducts(mockProducts));
+    dispatch(setCategories(mockCategories));
+    dispatch(setFeaturedProducts(mockProducts.filter(p => p.isFeatured)));
+    
+    // Check authentication status
+    checkAuthStatus();
+  }, []);
 
-  return (
-      <SafeAreaView style={commonStyles.container}>
-        <View style={commonStyles.content}>
-          <Image
-            source={require('../assets/images/final_quest_240x240.png')}
-            style={{ width: 180, height: 180 }}
-            resizeMode="contain"
-          />
-          <Text style={commonStyles.title}>This is a placeholder app.</Text>
-          <Text style={commonStyles.text}>Your app will be displayed here when it's ready.</Text>
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.primary,
-              paddingHorizontal: 24,
-              paddingVertical: 12,
-              borderRadius: 8,
-              marginTop: 30,
-            }}
-            onPress={handleOpenBottomSheet}
-          >
-            <Text style={{
-              color: colors.text,
-              fontSize: 16,
-              fontWeight: '600',
-            }}>
-              Open Bottom Sheet
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <SimpleBottomSheet
-          isVisible={isBottomSheetVisible}
-          onClose={() => setIsBottomSheetVisible(false)}
-        />
-      </SafeAreaView>
-  );
+  return <Redirect href="/auth/login" />;
 }
