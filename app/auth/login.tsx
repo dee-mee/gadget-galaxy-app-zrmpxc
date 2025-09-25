@@ -10,8 +10,8 @@ import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('demo@example.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('derekmuriuki2@gmail.com');
+  const [password, setPassword] = useState('Settings4$');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
@@ -55,6 +55,13 @@ export default function LoginScreen() {
     } else {
       Alert.alert('Login Failed', result.error || 'Please try again');
     }
+  };
+
+  const fillDemoCredentials = () => {
+    setEmail('derekmuriuki2@gmail.com');
+    setPassword('Settings4$');
+    setEmailError('');
+    setPasswordError('');
   };
 
   return (
@@ -105,18 +112,18 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
+            <Text style={styles.signupText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/signup')}>
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
 
           {/* Demo Credentials */}
-          <View style={styles.demoContainer}>
-            <Text style={styles.demoTitle}>Demo Credentials:</Text>
-            <Text style={styles.demoText}>Email: demo@example.com</Text>
-            <Text style={styles.demoText}>Password: password</Text>
-          </View>
+          <TouchableOpacity style={styles.demoContainer} onPress={fillDemoCredentials}>
+            <Text style={styles.demoTitle}>Demo Credentials (Tap to fill):</Text>
+            <Text style={styles.demoText}>Email: derekmuriuki2@gmail.com</Text>
+            <Text style={styles.demoText}>Password: Settings4$</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
