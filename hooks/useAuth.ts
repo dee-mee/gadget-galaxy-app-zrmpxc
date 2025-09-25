@@ -21,6 +21,7 @@ export const useAuth = () => {
 
       if (error) {
         dispatch(loginFailure(error.message));
+        Alert.alert('Login Failed', error.message);
         return { success: false, error: error.message };
       }
 
@@ -57,6 +58,7 @@ export const useAuth = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
       dispatch(loginFailure(errorMessage));
+      Alert.alert('Login Failed', errorMessage);
       return { success: false, error: errorMessage };
     }
   };
@@ -79,6 +81,7 @@ export const useAuth = () => {
 
       if (error) {
         dispatch(loginFailure(error.message));
+        Alert.alert('Registration Failed', error.message);
         return { success: false, error: error.message };
       }
 
@@ -96,6 +99,7 @@ export const useAuth = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
       dispatch(loginFailure(errorMessage));
+      Alert.alert('Registration Failed', errorMessage);
       return { success: false, error: errorMessage };
     }
   };
@@ -155,6 +159,7 @@ export const useAuth = () => {
       });
 
       if (error) {
+        Alert.alert('Reset Failed', error.message);
         return { success: false, error: error.message };
       }
 
@@ -166,6 +171,7 @@ export const useAuth = () => {
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Reset failed';
+      Alert.alert('Reset Failed', errorMessage);
       return { success: false, error: errorMessage };
     }
   };

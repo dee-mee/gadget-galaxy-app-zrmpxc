@@ -8,6 +8,7 @@ import { supabase } from '../integrations/supabase/client';
 import { Order } from '../../types';
 import { formatKES } from '../../utils/currency';
 import Icon from '../../components/Icon';
+import { useDataSync } from '../../hooks/useDataSync';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -48,6 +49,7 @@ export default function AdminOrders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const { updateOrderStatus: updateOrderStatusSync } = useDataSync();
 
   useEffect(() => {
     loadOrders();
@@ -83,26 +85,13 @@ export default function AdminOrders() {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-      if (error) {
-        console.error('Error updating order status:', error);
-        Alert.alert('Error', 'Failed to update order status');
-        return;
-      }
-
+    const result = await updateOrderStatusSync(orderId, newStatus);
+    
+    if (result.success) {
       Alert.alert('Success', 'Order status updated successfully');
-      loadOrders();
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      Alert.alert('Error', 'Failed to update order status');
+      loadOrders(); // Refresh the list
+    } else {
+      Alert.alert('Error', result.error || 'Failed to update order status');
     }
   };
 

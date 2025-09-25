@@ -75,14 +75,14 @@ export interface Order {
   estimated_delivery?: string;
   created_at?: string;
   updated_at?: string;
-  items?: OrderItem[];
+  order_items?: OrderItem[];
 }
 
 export interface OrderItem {
   id: string;
   order_id: string;
   product_id: string;
-  product?: Product;
+  products?: Product;
   quantity: number;
   price: number;
   created_at?: string;

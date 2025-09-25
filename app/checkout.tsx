@@ -6,17 +6,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../store';
 import { clearCart } from '../store/slices/cartSlice';
-import { addOrder } from '../store/slices/orderSlice';
 import { colors, spacing, commonStyles } from '../styles/commonStyles';
 import { formatKES, calculateTax, calculateShipping } from '../utils/currency';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
+import { useDataSync } from '../hooks/useDataSync';
 
 export default function CheckoutScreen() {
   const dispatch = useDispatch();
   const { items, total } = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
+  const { createOrder } = useDataSync();
 
   const [shippingAddress, setShippingAddress] = useState({
     street: user?.addresses[0]?.street || '',
@@ -56,55 +57,58 @@ export default function CheckoutScreen() {
 
     setIsProcessing(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      const order = {
-        id: Date.now().toString(),
-        userId: user?.id || '1',
-        items,
+    try {
+      const orderData = {
+        items: items.map(item => ({
+          id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price
+        })),
         subtotal: total,
         tax,
         shipping,
         total: finalTotal,
-        status: 'pending' as const,
         shippingAddress: {
-          id: '1',
-          type: 'home' as const,
           ...shippingAddress,
-          country: 'USA',
-          isDefault: true,
+          country: 'Kenya',
         },
         paymentMethod: {
-          id: '1',
           type: paymentMethod,
           ...(paymentMethod === 'card' && {
             cardLast4: cardDetails.number.slice(-4),
             cardBrand: 'Visa',
           }),
-        },
-        orderDate: new Date().toISOString(),
-        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }
       };
 
-      dispatch(addOrder(order));
-      dispatch(clearCart());
-      setIsProcessing(false);
+      const result = await createOrder(orderData);
 
-      Alert.alert(
-        'Order Placed Successfully!',
-        `Your order #${order.id} has been placed and will be delivered within 7 days.`,
-        [
-          {
-            text: 'View Order',
-            onPress: () => router.push(`/order/${order.id}`),
-          },
-          {
-            text: 'Continue Shopping',
-            onPress: () => router.push('/(tabs)/home'),
-          },
-        ]
-      );
-    }, 2000);
+      if (result.success) {
+        dispatch(clearCart());
+        
+        Alert.alert(
+          'Order Placed Successfully!',
+          `Your order has been placed and will be delivered within 7 days.`,
+          [
+            {
+              text: 'View Orders',
+              onPress: () => router.push('/orders'),
+            },
+            {
+              text: 'Continue Shopping',
+              onPress: () => router.push('/(tabs)/home'),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', result.error || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      Alert.alert('Error', 'Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

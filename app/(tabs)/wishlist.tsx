@@ -1,95 +1,34 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../../store';
-import { setWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
 import ProductCard from '../../components/ProductCard';
 import Icon from '../../components/Icon';
 import Button from '../../components/Button';
-import { supabase } from '../integrations/supabase/client';
-import { WishlistItem } from '../../types';
+import { useDataSync } from '../../hooks/useDataSync';
 
 export default function WishlistScreen() {
-  const dispatch = useDispatch();
   const { items } = useSelector((state: RootState) => state.wishlist);
   const { user } = useSelector((state: RootState) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const loadWishlist = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('wishlist')
-        .select(`
-          *,
-          product:products(
-            *,
-            category:categories(*)
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading wishlist:', error);
-        return;
-      }
-
-      const wishlistItems = (data as WishlistItem[]) || [];
-      dispatch(setWishlist(wishlistItems.map(item => item.product!)));
-    } catch (error) {
-      console.error('Error loading wishlist:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadWishlist();
-  }, [user]);
+  const { syncWishlist, removeFromWishlist } = useDataSync();
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadWishlist();
+    await syncWishlist();
     setRefreshing(false);
   };
 
   const handleRemoveFromWishlist = async (productId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('wishlist')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('product_id', productId);
-
-      if (error) {
-        console.error('Error removing from wishlist:', error);
-        return;
-      }
-
-      dispatch(removeFromWishlist(productId));
-    } catch (error) {
-      console.error('Error removing from wishlist:', error);
+    const result = await removeFromWishlist(productId);
+    if (!result.success) {
+      console.error('Failed to remove from wishlist:', result.error);
     }
   };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={commonStyles.safeArea}>
-        <View style={[styles.container, styles.centered]}>
-          <Text style={styles.loadingText}>Loading wishlist...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (items.length === 0) {
     return (

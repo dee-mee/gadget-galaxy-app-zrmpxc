@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
@@ -7,10 +7,10 @@ import { router } from 'expo-router';
 import { RootState } from '../store';
 import { colors, spacing, commonStyles } from '../styles/commonStyles';
 import { formatKES } from '../utils/currency';
-import { supabase } from './integrations/supabase/client';
 import { Order } from '../types';
 import Icon from '../components/Icon';
 import Button from '../components/Button';
+import { useDataSync } from '../hooks/useDataSync';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -65,50 +65,14 @@ const getStatusProgress = (status: string) => {
 
 export default function OrdersScreen() {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { orders, loading } = useSelector((state: RootState) => state.orders);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  useEffect(() => {
-    if (user?.id) {
-      loadOrders();
-    }
-  }, [user?.id]);
-
-  const loadOrders = async () => {
-    if (!user?.id) return;
-
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (
-            *,
-            products (*)
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading orders:', error);
-        return;
-      }
-
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { syncOrders } = useDataSync();
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadOrders();
+    await syncOrders();
     setRefreshing(false);
   };
 
@@ -122,7 +86,7 @@ export default function OrdersScreen() {
     statusFilter === 'all' || order.status === statusFilter
   );
 
-  if (loading && orders.length === 0) {
+  if (loading) {
     return (
       <SafeAreaView style={commonStyles.safeArea}>
         <View style={styles.container}>

@@ -1,62 +1,26 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { RootState } from '../../store';
-import { setProducts, setCategories, setFeaturedProducts } from '../../store/slices/productSlice';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
 import ProductCard from '../../components/ProductCard';
 import CategoryCard from '../../components/CategoryCard';
 import SearchBar from '../../components/SearchBar';
 import Icon from '../../components/Icon';
-import { supabase } from '../integrations/supabase/client';
+import { useDataSync } from '../../hooks/useDataSync';
 
 export default function HomeScreen() {
-  const dispatch = useDispatch();
-  const { products, categories, featuredProducts } = useSelector((state: RootState) => state.products);
+  const { products, categories, featuredProducts, loading } = useSelector((state: RootState) => state.products);
   const { user } = useSelector((state: RootState) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
-
-  const loadData = async () => {
-    try {
-      // Load categories
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (categoriesData) {
-        dispatch(setCategories(categoriesData));
-      }
-
-      // Load products
-      const { data: productsData } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(*)
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (productsData) {
-        dispatch(setProducts(productsData));
-        dispatch(setFeaturedProducts(productsData.filter(p => p.is_featured)));
-      }
-    } catch (error) {
-      console.log('Error loading data:', error);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { syncProducts, syncCategories } = useDataSync();
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await Promise.all([syncProducts(), syncCategories()]);
     setRefreshing(false);
   };
 

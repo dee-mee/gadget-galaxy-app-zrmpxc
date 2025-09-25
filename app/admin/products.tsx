@@ -8,46 +8,23 @@ import { Product } from '../../types';
 import { router } from 'expo-router';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
 import { supabase } from '../integrations/supabase/client';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { useDataSync } from '../../hooks/useDataSync';
 import React, { useEffect, useState } from 'react';
 
 export default function AdminProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { products, loading } = useSelector((state: RootState) => state.products);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const { syncProducts } = useDataSync();
 
   useEffect(() => {
     filterProducts();
   }, [products, searchQuery]);
 
   const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading products:', error);
-        Alert.alert('Error', 'Failed to load products');
-        return;
-      }
-
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error loading products:', error);
-      Alert.alert('Error', 'Failed to load products');
-    } finally {
-      setLoading(false);
-    }
+    await syncProducts();
   };
 
   const filterProducts = () => {
@@ -88,7 +65,7 @@ export default function AdminProducts() {
               }
 
               Alert.alert('Success', 'Product deleted successfully');
-              loadProducts();
+              await loadProducts();
             } catch (error) {
               console.error('Error deleting product:', error);
               Alert.alert('Error', 'Failed to delete product');
@@ -113,7 +90,7 @@ export default function AdminProducts() {
       }
 
       Alert.alert('Success', `Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      loadProducts();
+      await loadProducts();
     } catch (error) {
       console.error('Error updating product status:', error);
       Alert.alert('Error', 'Failed to update product status');

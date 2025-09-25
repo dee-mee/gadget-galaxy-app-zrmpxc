@@ -6,11 +6,11 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { addToCart } from '../../store/slices/cartSlice';
-import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice';
 import { colors, spacing, commonStyles } from '../../styles/commonStyles';
 import { formatKES } from '../../utils/currency';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
+import { useDataSync } from '../../hooks/useDataSync';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +19,7 @@ export default function ProductDetailScreen() {
   const dispatch = useDispatch();
   const { products } = useSelector((state: RootState) => state.products);
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const { addToWishlist, removeFromWishlist } = useDataSync();
   
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -41,11 +42,17 @@ export default function ProductDetailScreen() {
     console.log('Added to cart:', product.name, 'Quantity:', quantity);
   };
 
-  const handleWishlistToggle = () => {
+  const handleWishlistToggle = async () => {
     if (isWishlisted) {
-      dispatch(removeFromWishlist(product.id));
+      const result = await removeFromWishlist(product.id);
+      if (!result.success) {
+        console.error('Failed to remove from wishlist:', result.error);
+      }
     } else {
-      dispatch(addToWishlist(product));
+      const result = await addToWishlist(product);
+      if (!result.success) {
+        console.error('Failed to add to wishlist:', result.error);
+      }
     }
   };
 
